@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TriangleAi - Log Triage System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 500px;
+        }
+        h1 {
+            margin-top: 0;
+            color: #333;
+            font-size: 24px;
+        }
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: monospace;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 4px;
+            width: 100%;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #resultBox {
+            margin-top: 20px;
+            padding: 15px;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap; /* Keeps JSON formatting neat */
+            display: none; /* Hidden until we get a result */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🚨 TriangleAi</h1>
+        <p>Paste an IT error log or ticket below to triage:</p>
+        
+        <textarea id="logInput" placeholder="e.g. CRITICAL ALERT: The main fiber optic switch in rack 4B just caught fire..."></textarea>
+        
+        <button onclick="analyzeLog()">Analyze Log</button>
+        
+        <div id="resultBox"></div>
+    </div>
+
+    <script>
+        async function analyzeLog() {
+            const logText = document.getElementById('logInput').value;
+            const resultBox = document.getElementById('resultBox');
+
+            if (!logText) {
+                alert("Please paste a log first!");
+                return;
+            }
+
+            // Show loading state
+            resultBox.style.display = 'block';
+            resultBox.style.backgroundColor = '#fff';
+            resultBox.style.borderColor = '#ccc';
+            resultBox.innerText = "Querying TriangleAi Engine...";
+
+            try {
+                // Call the Node.js backend we built!
+                const response = await fetch('http://localhost:3000/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ logText: logText })
+                });
+
+                const data = await response.json();
+                
+                // Display the final JSON beautifully
+                resultBox.innerText = JSON.stringify(data, null, 2);
+
+                // --- FRONTEND COMPUTATIONAL THINKING ---
+                // Change the UI color based on the status the backend gave us
+                if (data.status.includes("CRITICAL")) {
+                    resultBox.style.backgroundColor = "#ffebee"; // Light red
+                    resultBox.style.borderColor = "red";
+                } else if (data.status.includes("NORMAL")) {
+                    resultBox.style.backgroundColor = "#fff9c4"; // Light yellow
+                    resultBox.style.borderColor = "orange";
+                } else {
+                    resultBox.style.backgroundColor = "#e8f5e9"; // Light green
+                    resultBox.style.borderColor = "green";
+                }
+
+            } catch (error) {
+                resultBox.innerText = "Error connecting to TriangleAi backend. Is server.js running?";
+                resultBox.style.borderColor = "red";
+            }
+        }
+    </script>
+
+</body>
+</html>
